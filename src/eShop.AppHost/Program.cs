@@ -74,7 +74,7 @@ bool useOpenAI = true;
 if (useOpenAI)
 {
     const string openAIName = "openai";
-    const string textEmbeddingName = "text-embedding-ada-002";
+    const string textEmbeddingName = "text-embedding-3-small";
     const string chatModelName = "gpt-35-turbo-16k";
 
     // to use an existing OpenAI resource, add the following to the AppHost user secrets:
@@ -107,6 +107,7 @@ if (useOpenAI)
         // Disabling because region East US is out of capacity
         var chatAIResource = builder.AddAzureOpenAI(openAIName)
             .AddDeployment(new AzureOpenAIDeployment(chatModelName, "gpt-35-turbo", "0613", "Standard", 10));
+            .AddDeployment(new AzureOpenAIDeployment(textEmbeddingName, "text-embedding-3-small", "2"));
         //var chatAIResource = builder.AddConnectionString(openAIName);
     
         var embeddingAIResource = builder.AddAzureOpenAI($"{openAIName}-embedding")

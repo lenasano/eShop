@@ -1,4 +1,5 @@
 ﻿using eShop.Catalog.API.Services;
+using Microsoft.SemanticKernel;
 
 public static class Extensions
 {
@@ -30,9 +31,15 @@ public static class Extensions
         builder.Services.AddOptions<AIOptions>()
             .BindConfiguration("AI");
 
-        if (!string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("openai-embedding")))
+        if (!string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("openai-embedding"))) // not sure about `else` here
         {
             builder.AddAzureOpenAIClient("openai-embedding");
+            builder.Services.AddOpenAITextEmbeddingGeneration(builder.Configuration["AIOptions:OpenAI:EmbeddingName"] ?? "text-embedding-3-small");
+        }
+        else if (builder.Configuration["AI:Onnx:EmbeddingModelPath"] is string modelPath &&
+            builder.Configuration["AI:Onnx:EmbeddingVocabPath"] is string vocabPath)
+        {
+            builder.Services.AddBertOnnxTextEmbeddingGeneration(modelPath, vocabPath);
         }
 
         builder.Services.AddSingleton<ICatalogAI, CatalogAI>();
