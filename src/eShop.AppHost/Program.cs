@@ -108,7 +108,7 @@ if (useOpenAI)
     
         // Disabling because region East US is out of capacity
         var chatAIResource = builder.AddAzureOpenAI(openAIName)
-            .AddDeployment(new AzureOpenAIDeployment(chatModelName, "gpt-35-turbo", "0613", "Standard", 10));
+            .AddDeployment(new AzureOpenAIDeployment(chatModelName, "gpt-35-turbo", "0613", "Standard", 10))
             .AddDeployment(new AzureOpenAIDeployment(textEmbeddingName, "text-embedding-3-small", "2"));
         //var chatAIResource = builder.AddConnectionString(openAIName);
     

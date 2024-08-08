@@ -6,6 +6,7 @@ namespace eShop.WebAppComponents.Services
 {
     public interface ICatalogService
     {
+        Task<string?> MaxTokensAsync();
         Task<CatalogItem?> GetCatalogItem(int id);
         Task<CatalogResult> GetCatalogItems(int pageIndex, int pageSize, int? brand, int? type);
         Task<List<CatalogItem>> GetCatalogItems(IEnumerable<int> ids);
