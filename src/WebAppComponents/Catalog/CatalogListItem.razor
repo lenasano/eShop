@@ -1,5 +1,8 @@
 ﻿@using eShop.WebAppComponents.Item
+@using Microsoft.JSInterop
+
 @inject IProductImageUrlProvider ProductImages
+@inject CatalogService CatalogService
 
 <div class="catalog-item">
     <a class="catalog-product" href="@ItemHelper.Url(Item)" data-enhance-nav="false">
@@ -9,6 +12,7 @@
         <span class='catalog-product-content'>
             <span class='name'>@Item.Name</span>
             <span class='price'>$@Item.Price.ToString("0.00")</span>
+            @if(@ShowRatingEnabled()) { <span class='rating'>@Rating</span> }
         </span>
     </a>
 </div>
@@ -19,4 +23,37 @@
 
     [Parameter]
     public bool IsLoggedIn { get; set; }
+
+    public decimal discount(decimal price)
+    {
+        return price - (price * 0.20m);
+    }
+
+    public string Rating = "☆☆★";
+
+    public bool showRatingEnabled = true;
+
+    public bool ShowRatingEnabled()
+    {
+        return showRatingEnabled;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Random random = new Random();
+        int r = random.Next(0, 4);
+
+        string result = "";
+        for(int i = 0; i < 5; i++) {
+            result = ( i < r ? "☆" : "★" ) + result;
+        }
+
+        Rating = result;
+
+        string? showRating = await CatalogService.DisplayRatingAsync();
+
+        if(showRating != null) {
+            showRatingEnabled = string.Equals(showRating, "On");
+        }
+    }
 }

@@ -30,6 +30,10 @@ public static class CatalogApi
         api.MapPost("/items", CreateItem);
         api.MapDelete("/items/{id:int}", DeleteItemById);
 
+        // AppConfig feature flag evaluations
+        api.MapGet("/ff/display_rating", GetDisplayRating);//Async);
+        api.MapGet("/ff/initialize_userkey", OnInitializeUserKey);
+
         return app;
     }
 
@@ -294,6 +298,29 @@ public static class CatalogApi
         services.Context.CatalogItems.Remove(item);
         await services.Context.SaveChangesAsync();
         return TypedResults.NoContent();
+    }
+
+    private static string GetDisplayRating() {
+        return "On";    //next: do this for real
+    }
+
+    /*
+    private static async Task<string> GetDisplayRatingAsync(IVariantFeatureManagerSnapshot snapshot) {
+       return await GetFeatureVariantAsync(snapshot, "display_rating");
+    }
+
+    private static async Task<string> GetFeatureVariantAsync(IVariantFeatureManagerSnapshot snapshot, string flag_name)
+    {
+        CancellationToken cancellationToken = new CancellationToken();
+        Variant personVariant = await snapshot.GetVariantAsync(flag_name, cancellationToken);
+        return personVariant.Configuration.Get<string>() ?? "control";
+    }
+    */
+
+    private static string OnInitializeUserKey(/*TelemetryClient telemetryClient*/) {
+        string name = Guid.NewGuid().ToString();
+        //telemetryClient.Context.User.AuthenticatedUserId = name;
+        return name;
     }
 
     private static string GetImageMimeTypeFromImageFileExtension(string extension) => extension switch

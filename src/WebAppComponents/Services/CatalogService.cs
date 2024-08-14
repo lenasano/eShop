@@ -7,7 +7,32 @@ namespace eShop.WebAppComponents.Services;
 public class CatalogService(HttpClient httpClient) : ICatalogService
 {
     private readonly string remoteServiceBaseUrl = "api/catalog/";
+    public async Task<string?> InitUserKey()
+    {
+        var uri = $"{remoteServiceBaseUrl}ff/initialize_userkey";
+        var response = await httpClient.GetAsync(uri);
+        response.EnsureSuccessStatusCode();
 
+        return await response.Content.ReadAsStringAsync();
+    }
+
+    // public async Task<string> TrackEventAsync(string eventTypeId)
+    // {
+    //     var response = await httpClient.GetAsync("api/track?eventTypeId=" + eventTypeId);
+    //     response.EnsureSuccessStatusCode();
+
+    //     return await response.Content.ReadAsStringAsync();      
+    // }
+
+   public async Task<string?> DisplayRatingAsync()
+    {
+        var uri = $"{remoteServiceBaseUrl}ff/display_rating";
+        var response = await httpClient.GetAsync(uri);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadAsStringAsync();
+    }
+    
     public Task<CatalogItem?> GetCatalogItem(int id)
     {
         var uri = $"{remoteServiceBaseUrl}items/{id}";
