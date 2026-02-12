@@ -1,4 +1,5 @@
-﻿@using eShop.WebAppComponents.Item
+﻿@using System.ComponentModel
+@using eShop.WebAppComponents.Item
 @inject IProductImageUrlProvider ProductImages
 
 <div class="catalog-item">
@@ -8,8 +9,13 @@
         </span>
         <span class='catalog-product-content'>
             <span class='name'>@Item.Name</span>
-            <span class='price'>$@Item.Price.ToString("0.00")</span>
-            @if(!string.IsNullOrEmpty(@DisplayRating) && !@DisplayRating.Equals("control") && !@DisplayRating.Equals("off"))
+            <span class='price'>$@Item.Price.ToString("0.00")
+                @if( IsFlagOn(@DisplayDiscount) && !string.IsNullOrEmpty(@Discount) )
+                {
+                    <span class='percent-off'> (@Discount% OFF)</span>
+                }
+            </span>
+            @if( IsFlagOn(@DisplayRating) )
             {
                 <span class='item-rating' style='color:@DisplayRating'>@Rating</span>
             }
@@ -24,9 +30,22 @@
     [Parameter]
     public string? DisplayRating { get; set; }
 
-    private string Rating = "☆★★";
+    [Parameter]
+    public string? DisplayDiscount { get; set; }
+
+    private string  Rating = "☆★★";
+    private string? Discount;
 
     protected override void OnInitialized()
+    {
+        SetRating();
+    }
+
+    protected override void OnParametersSet(){
+        SetDiscount();
+    }
+
+    private void SetRating()
     {
         int minRating = 2;
         int maxRating = 5;
@@ -39,4 +58,16 @@
 
         Rating = result;
     }
+    private void SetDiscount()
+    {
+        if( Item.Name.Substring(1, 3).Contains('e'))    // Set some (not all) items on sale
+        {
+            Discount = DisplayDiscount;
+        }
+    }
+
+    private bool IsFlagOn(string? flagResult) => 
+        ! string.IsNullOrEmpty(flagResult) && 
+        ! flagResult.Equals("control") && 
+        ! flagResult.Equals("off");
 }

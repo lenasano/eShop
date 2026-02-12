@@ -12,15 +12,22 @@ namespace eShop.WebApp.Services;
    /// </remarks>
    public readonly struct FlagNames {
     public const string DisplayProductRating = "display_product_rating";
+    public const string DisplayDiscount      = "display_discount";
 };
 
 public class FmeService(GrpcFmeClient fmeClient, ILogger<FmeService> logger)
 {
-    public async Task<string> GetFlagTreatmentAsync(string flagName)
+    public async Task<string> GetFlagTreatmentAsync(string flagName) => await GetFlagTreatmentAsync(flagName, null);
+
+    public async Task<string> GetFlagTreatmentAsync(string flagName, Dictionary<string,object>? attributes)
     {
         try
         {
-            FlagReply flagReply = await fmeClient.GetFlagTreatmentAsync(new FlagRequest{FlagName = flagName});
+            FlagRequest flagRequest = new FlagRequest{FlagName = flagName};
+            if( attributes is not null)
+                foreach(var a in attributes) flagRequest.Attributes.TryAdd(a.Key, a.Value.ToString());
+
+            FlagReply flagReply = await fmeClient.GetFlagTreatmentAsync(flagRequest);
             return flagReply.TreatmentResult;
         }
         catch (RpcException e)

@@ -13,6 +13,7 @@ service Fme {
 // The request message containing the feature flag name.
 message FlagRequest {
   string flagName = 1;
+  map<string, string> attributes = 2;
 }
 
 // The response message containing the feature flag treatment.

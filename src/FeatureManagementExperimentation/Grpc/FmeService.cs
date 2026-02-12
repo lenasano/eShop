@@ -42,7 +42,21 @@ public class FmeService : Fme.FmeBase
         try
         {
             if( _fmeSdkClient is not null)
-                return new FlagReply{ TreatmentResult = await _fmeSdkClient.GetTreatmentAsync(userId, request.FlagName)};
+            {
+                Dictionary<string,object>? attributes = 
+                    ( request.Attributes != null && request.Attributes.Count > 0 )
+                    ? request.Attributes.ToDictionary( pair => pair.Key, pair => (object) pair.Value )
+                    : null;
+                
+                return new FlagReply
+                    { 
+                        TreatmentResult = await _fmeSdkClient.GetTreatmentAsync(
+                                                    userId, 
+                                                    request.FlagName,
+                                                    attributes
+                                          )
+                    };
+            }
         }
         catch (Exception e) { _logger?.LogError(e.Message); }
 

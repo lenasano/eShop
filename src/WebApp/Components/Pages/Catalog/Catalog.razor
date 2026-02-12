@@ -21,7 +21,7 @@
             <div class="catalog-items">
                 @foreach (var item in catalogResult.Data)
                 {
-                    <CatalogListItem Item="@item" DisplayRating="@displayRating" />
+                    <CatalogListItem Item="@item" DisplayRating="@displayRating" DisplayDiscount="@displayDiscount" />
                 }
             </div>
 
@@ -47,7 +47,8 @@
     [SupplyParameterFromQuery(Name = "type")]
     public int? ItemTypeId { get; set; }
 
-    string? displayRating { get; set; } = null;
+    string? displayRating   { get; set; } = null;
+    string? displayDiscount { get; set; } = null;
     CatalogResult? catalogResult;
 
     static IEnumerable<int> GetVisiblePageIndexes(CatalogResult result)
@@ -66,6 +67,9 @@
 
                                 https://learn.microsoft.com/en-us/aspnet/core/blazor/components/rendering?view=aspnetcore-10.0 */
 
-        displayRating = await FmeService.GetFlagTreatmentAsync(FlagNames.DisplayProductRating);
+        displayRating   = await FmeService.GetFlagTreatmentAsync(FlagNames.DisplayProductRating);
+        displayDiscount = await FmeService.GetFlagTreatmentAsync(
+                                                FlagNames.DisplayDiscount, 
+                                                new Dictionary<string, object>{{"city", "new_york"}} );
     }
 }
