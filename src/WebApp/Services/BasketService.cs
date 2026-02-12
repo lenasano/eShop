@@ -17,6 +17,11 @@ public class BasketService(GrpcBasketClient basketClient)
         await basketClient.DeleteBasketAsync(new DeleteBasketRequest());
     }
 
+    public async Task AddAnonymousBasketItemsAsync()
+    {
+        await basketClient.AddAnonymousBasketItemsAsync(new ());
+    }
+
     public async Task UpdateBasketAsync(IReadOnlyCollection<BasketQuantity> basket)
     {
         var updatePayload = new UpdateBasketRequest();

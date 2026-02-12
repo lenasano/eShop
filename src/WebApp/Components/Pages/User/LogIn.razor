@@ -1,5 +1,6 @@
 ﻿@page "/user/login"
 @inject NavigationManager Nav
+@inject ILoggerFactory LoggerFactory
 @attribute [Authorize]
 @code {
     [SupplyParameterFromQuery]
@@ -10,6 +11,14 @@
 
     protected override async Task OnInitializedAsync()
     {
+
+        var logger = LoggerFactory.CreateLogger(typeof(eShop.WebApp.Components.Pages.User.LogIn));
+        
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("Login ^.~*");
+        }
+
         var returnUrl = ReturnUrl ?? "/";
         var url = new Uri(returnUrl, UriKind.RelativeOrAbsolute);
         Nav.NavigateTo(url.IsAbsoluteUri ? "/" : returnUrl);

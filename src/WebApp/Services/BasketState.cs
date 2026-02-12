@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using eShop.WebAppComponents.Catalog;
 using eShop.WebAppComponents.Services;
+using eShop.Basket.API.Grpc;
+using System.Runtime.CompilerServices;
 
 namespace eShop.WebApp.Services;
 
@@ -18,10 +20,21 @@ public class BasketState(
     public Task DeleteBasketAsync()
         => basketService.DeleteBasketAsync();
 
+    /// <summary>
+    /// Copy over anonymous user's cart items
+    /// </summary>
+    /// <remarks>
+    /// Middleware uses Duende Identity Server for signed-in user's ID and gRPC request metadata for anonymous user's ID.
+    /// </remarks>
+    public async Task AddAnonymousBasketItemsAsync()
+    { 
+        _cachedBasket = null;
+        await basketService.AddAnonymousBasketItemsAsync();
+        await NotifyChangeSubscribersAsync();
+    }
+
     public async Task<IReadOnlyCollection<BasketItem>> GetBasketItemsAsync()
-        => (await GetUserAsync()).Identity?.IsAuthenticated == true
-        ? await FetchBasketItemsAsync()
-        : [];
+        => await FetchBasketItemsAsync();
 
     public IDisposable NotifyOnChange(EventCallback callback)
     {
@@ -116,36 +129,37 @@ public class BasketState(
 
     private Task<IReadOnlyCollection<BasketItem>> FetchBasketItemsAsync()
     {
-        return _cachedBasket ??= FetchCoreAsync();
+        return _cachedBasket ??= ConvertToBasketItems( basketService.GetBasketAsync() );
+    }
 
-        async Task<IReadOnlyCollection<BasketItem>> FetchCoreAsync()
+    private async Task<IReadOnlyCollection<BasketItem>> ConvertToBasketItems(Task<IReadOnlyCollection<BasketQuantity>> quantitiesTask)
+    {
+        var quantities = await quantitiesTask;
+
+        if (quantities.Count == 0)
         {
-            var quantities = await basketService.GetBasketAsync();
-            if (quantities.Count == 0)
-            {
-                return [];
-            }
-
-            // Get details for the items in the basket
-            var basketItems = new List<BasketItem>();
-            var productIds = quantities.Select(row => row.ProductId);
-            var catalogItems = (await catalogService.GetCatalogItems(productIds)).ToDictionary(k => k.Id, v => v);
-            foreach (var item in quantities)
-            {
-                var catalogItem = catalogItems[item.ProductId];
-                var orderItem = new BasketItem
-                {
-                    Id = Guid.NewGuid().ToString(), // TODO: this value is meaningless, use ProductId instead.
-                    ProductId = catalogItem.Id,
-                    ProductName = catalogItem.Name,
-                    UnitPrice = catalogItem.Price,
-                    Quantity = item.Quantity,
-                };
-                basketItems.Add(orderItem);
-            }
-
-            return basketItems;
+            return [];
         }
+
+        // Get details for the items in the basket
+        var basketItems = new List<BasketItem>();
+        var productIds = quantities.Select(row => row.ProductId);
+        var catalogItems = (await catalogService.GetCatalogItems(productIds)).ToDictionary(k => k.Id, v => v);
+        foreach (var item in quantities)
+        {
+            var catalogItem = catalogItems[item.ProductId];
+            var orderItem = new BasketItem
+            {
+                Id = Guid.NewGuid().ToString(), // TODO: this value is meaningless, use ProductId instead.
+                ProductId = catalogItem.Id,
+                ProductName = catalogItem.Name,
+                UnitPrice = catalogItem.Price,
+                Quantity = item.Quantity,
+            };
+            basketItems.Add(orderItem);
+        }
+
+        return basketItems;
     }
 
     private class BasketStateChangedSubscription(BasketState Owner, EventCallback Callback) : IDisposable

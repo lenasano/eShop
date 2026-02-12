@@ -8,6 +8,7 @@ service Basket {
     rpc GetBasket(GetBasketRequest) returns (CustomerBasketResponse) {}
     rpc UpdateBasket(UpdateBasketRequest) returns (CustomerBasketResponse) {}
     rpc DeleteBasket(DeleteBasketRequest) returns (DeleteBasketResponse) {}
+    rpc AddAnonymousBasketItems(AddAnonymousBasketItemsRequest) returns (CustomerBasketResponse) {}
 }
 
 message GetBasketRequest {
@@ -30,4 +31,7 @@ message DeleteBasketRequest {
 }
 
 message DeleteBasketResponse {
+}
+
+message AddAnonymousBasketItemsRequest {
 }

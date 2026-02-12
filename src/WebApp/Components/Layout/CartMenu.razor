@@ -1,8 +1,16 @@
 ﻿@using System.Net
+@using System.Diagnostics
+@using Google.Protobuf.WellKnownTypes
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using RabbitMQ.Client.Exceptions
+@using eShop.AnonymousUserSupport.Extensions
 @attribute [StreamRendering]
 @inject BasketState Basket
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject LogOutService LogOutService
 @inject NavigationManager NavigationManager
+@inject ILogger<CartMenu> Logger
 @implements IDisposable
 
 <a aria-label="cart" href="cart">
@@ -30,6 +38,10 @@
         basketStateSubscription = Basket.NotifyOnChange(
             EventCallback.Factory.Create(this, UpdateBasketItemsAsync));
 
+        LoginChecker loginChecker = new LoginChecker(AuthenticationStateProvider, HttpContext, Logger);
+        if( await loginChecker.IsNewLogin() )
+            await AddAnonymousBasketItemsAsync();
+
         try
         {
             await UpdateBasketItemsAsync();
@@ -48,5 +60,56 @@
     private async Task UpdateBasketItemsAsync()
     {
         basketItems = await Basket.GetBasketItemsAsync();
+    }
+
+    private async Task AddAnonymousBasketItemsAsync()
+    {
+        await Basket.AddAnonymousBasketItemsAsync();
+    }
+
+    /// <summary>
+    /// Checks if a user just logged in. Uses cookies and ASP.NET Identity.
+    /// </summary>
+    private record LoginChecker (
+        AuthenticationStateProvider _authStateProvider,
+        HttpContext? _httpContext,
+        ILogger<CartMenu>? _logger
+    )
+    {
+        internal enum LoginState { NewLogin, NoLogin, Unknown };
+
+        private LoginState loginState { get; set; } = LoginState.Unknown;
+
+        internal async Task<bool> IsNewLogin()
+        {
+            await CheckNewLoginState();
+            UpdateAnonymousCookie();
+
+            return LoginState.NewLogin == loginState;
+        }
+
+        private async Task CheckNewLoginState()
+        {
+            if(true == _logger?.IsEnabled(LogLevel.Debug))
+            {
+                ClaimsPrincipal user = (await _authStateProvider.GetAuthenticationStateAsync()).User;
+                _logger?.LogDebug(
+                    "CartMenu, user authenticated? Id : {authenticated-id}, name : {user-name}\n anonymous id from cookie: {cookie}", 
+                    user.GetUserId(), user.GetUserName(), _httpContext?.GetAnonymousUserIdFromCookie()
+                );
+            }
+
+            bool isUserLoggedIn  = ! string.IsNullOrEmpty( (await _authStateProvider.GetAuthenticationStateAsync()).User.GetUserId() );
+            bool isUserAnonymous = ! string.IsNullOrEmpty( _httpContext?.GetAnonymousUserIdFromCookie() ); 
+
+            if(  isUserLoggedIn &&  isUserAnonymous ) loginState = LoginState.NewLogin;
+            if( !isUserLoggedIn && !isUserAnonymous ) loginState = LoginState.NoLogin ;
+        }
+
+        private void UpdateAnonymousCookie()
+        {
+            if( LoginState.NewLogin == loginState ) _httpContext?.DeleteAnonymousUserIdCooke(_logger);
+            if( LoginState.NoLogin  == loginState ) _httpContext?.SetAnonymousUserIdCookie  (_logger);
+        }
     }
 }

@@ -1,9 +1,23 @@
 ﻿#nullable enable
 
+using eShop.AnonymousUserSupport.Extensions;
+
 namespace eShop.Basket.API.Extensions;
 
 internal static class ServerCallContextIdentityExtensions
 {
-    public static string? GetUserIdentity(this ServerCallContext context) => context.GetHttpContext().User.FindFirst("sub")?.Value;
+    /// <summary>
+    /// Get ID of logged in user or anonymous user
+    /// </summary>
+    /// <remarks>
+    /// Gets logged in user's ID from ASP.NET Core Identity. If the user is not logged in, the anonymous user ID (sent from the client) is retrieved from the HTTP header.
+    /// </remarks>
+    /// <returns>User ID</returns>
+    public static string? GetUserIdentity(this ServerCallContext context)
+    {
+        HttpContext hc = context.GetHttpContext();
+        return hc.User.FindFirst("sub")?.Value ?? hc.GetAnonymousUserIdFromHeader();
+    }
+
     public static string? GetUserName(this ServerCallContext context) => context.GetHttpContext().User.FindFirst(x => x.Type == ClaimTypes.Name)?.Value;
 }

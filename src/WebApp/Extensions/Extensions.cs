@@ -18,6 +18,7 @@ public static class Extensions
                .AddEventBusSubscriptions();
 
         builder.Services.AddHttpForwarderWithServiceDiscovery();
+        builder.Services.AddHttpContextAccessor();  // for anonymous user support: to read the anon-id cookie
 
         // Application services
         builder.Services.AddScoped<BasketState>();
@@ -25,11 +26,13 @@ public static class Extensions
         builder.Services.AddSingleton<BasketService>();
         builder.Services.AddSingleton<OrderStatusNotificationService>();
         builder.Services.AddSingleton<IProductImageUrlProvider, ProductImageUrlProvider>();
+        builder.Services.AddScoped<ClientHeaderInterceptor>();  // for anonymous user support
         builder.AddAIServices();
 
         // HTTP and GRPC client registrations
         builder.Services.AddGrpcClient<Basket.BasketClient>(o => o.Address = new("http://basket-api"))
-            .AddAuthToken();
+            .AddAuthToken()
+            .AddInterceptor<ClientHeaderInterceptor>(); // for anonymous user support
 
         builder.Services.AddHttpClient<CatalogService>(o => o.BaseAddress = new("http://catalog-api"))
             .AddApiVersion(2.0)

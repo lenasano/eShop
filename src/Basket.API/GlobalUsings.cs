@@ -9,3 +9,4 @@ global using eShop.EventBus.Abstractions;
 global using eShop.EventBus.Events;
 global using eShop.ServiceDefaults;
 global using StackExchange.Redis;
+global using eShop.AnonymousUserSupport;

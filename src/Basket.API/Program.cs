@@ -3,7 +3,8 @@
 builder.AddBasicServiceDefaults();
 builder.AddApplicationServices();
 
-builder.Services.AddGrpc();
+//builder.Services.AddGrpc();
+builder.Services.AddGrpc(options => { options.Interceptors.Add<ServerHeaderInterceptor>(); });
 
 var app = builder.Build();
 

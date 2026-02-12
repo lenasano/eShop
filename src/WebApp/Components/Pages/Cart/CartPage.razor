@@ -3,7 +3,7 @@
 @inject BasketState Basket
 @inject IProductImageUrlProvider ProductImages
 @attribute [StreamRendering]
-@attribute [Authorize]
+@* @attribute [Authorize] *@ 
 
 <PageTitle>Shopping Bag | AdventureWorks</PageTitle>
 <SectionContent SectionName="page-header-title">Shopping bag</SectionContent>
@@ -83,6 +83,7 @@
 <form @formname="update-cart" @onsubmit="@UpdateQuantityAsync"></form>
 
 @code {
+    IDisposable? basketStateSubscription;
     private IReadOnlyCollection<BasketItem>? basketItems;
 
     [SupplyParameterFromForm]
@@ -92,6 +93,17 @@
     public int? UpdateQuantityValue { get; set; }
 
     protected override async Task OnInitializedAsync()
+    {
+        // The basket contents may change during the lifetime of this component (e.g., when a user
+        // signs in during the current request). If this EventCallback is invoked, it will cause this
+        // component to re-render with the updated data.
+        basketStateSubscription = Basket.NotifyOnChange(
+            EventCallback.Factory.Create(this, UpdateBasketItemsAsync));
+
+        await UpdateBasketItemsAsync();
+    }
+
+    private async Task UpdateBasketItemsAsync()
     {
         basketItems = await Basket.GetBasketItemsAsync();
     }

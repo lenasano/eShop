@@ -125,6 +125,9 @@ public class BasketService : IBasketService, IDisposable
         _channel = GrpcChannel.ForAddress(_settingsService.GatewayBasketEndpointBase);
 
         _basketClient = new BasketGrpcClient.Basket.BasketClient(_channel);
+        // For anonymous user support with mobile, replace the above line with the following (untested) :
+        // _invoker = channel.Intercept(new AnonymousUserInterceptor());
+        // _basketClient = new BasketGrpcClient.Basket.BasketClient(_invoker);
 
         return _basketClient;
     }
