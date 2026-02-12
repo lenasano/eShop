@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            td {
+                width: 60px;
+                height: 60px;
+                text-align: center;
+                font-family: sans-serif;
+                font-size: 14;
+                color: black;
+            }
+        </style>
+        <script src="https://cdn.split.io/sdk/split-11.9.1.min.js"></script>
+        <script src="fmekey.txt"></script>     <!-- write the following line in a local file named "fmekey.txt":
+                                            let CLIENT_SIDE_SDK_API_KEY = "<your client-side FME SDK API key>"
+                                            -->
+    </head>
+
+    <body>
+        <table id="table"></table>
+    </body>
+    
+    <script>
+        const FLAG_NAME_DISPLAY_RATING ="display_product_rating";   // Name of FME feature flag
+        const GRID_WIDTH = 9, GRID_HEIGHT = 9;
+        
+        //emitter.setMaxListeners( GRID_WIDTH * GRID_HEIGHT ); - tried to suppress warning, but doesn't work: emitter is null
+        
+        var factory;
+        
+        // create an FME factory instance to trigger fetching payload
+        factory = splitio({
+            core: {
+                authorizationKey: CLIENT_SIDE_SDK_API_KEY,
+                key: 'a0',
+            },
+            debug: false
+        });
+
+        let client = factory.client();
+        
+        
+        
+        document.addEventListener('DOMContentLoaded', drawTable);
+        
+        
+        function drawTable() {
+            console.log("drawTable!");
+
+        
+            let table = document.getElementById('table');
+            for (i = 0; i < GRID_HEIGHT; i++) {
+                let row = table.insertRow(i);
+                for (j = 0; j < GRID_WIDTH; j++) {
+                    row.insertCell(j);
+                    let a = numberToLetter(i);
+                    let id = a + j;
+                    
+                    table.rows[i].cells[j].innerHTML = id;
+                    table.rows[i].cells[j].id = id;
+                    table.rows[i].cells[j].onclick = highlight(id);
+                    
+                    try {
+                        let client = factory.client(id);
+                        // add event listener to each FME client to trigger UI update
+                        client.once(
+                            client.Event.SDK_READY,
+                            () => addStar(id));
+                        client.on(
+                            client.Event.SDK_UPDATE,
+                            () => addStar(id));
+                      } catch (e) {
+                          console.log(e);
+                      }
+                }
+            }
+        }
+        
+        
+        function addStar(id) {
+            console.log("updating " + id);
+            let td = document.getElementById(id)
+            
+            td.innerHTML = id;       // reset displayed content
+
+            let color = factory.client(id).getTreatment(FLAG_NAME_DISPLAY_RATING);
+            if( color != "control" && color != "off" )
+                td.innerHTML += "<span style='color: " + color + "'>★</font>";
+        }
+        
+        
+        function numberToLetter(number) {
+            return String.fromCharCode( "a".charCodeAt(0) + number );
+        }
+
+        function highlight(id) {
+            return function() {
+                console.log("click " + id);
+                let cell = document.getElementById(id);
+
+                let bgColor = cell.style.backgroundColor;
+                let color = cell.style.color;
+                cell.style.backgroundColor = "grey";
+                cell.style.color = "white";
+
+                setTimeout( function(){
+                  cell.style.backgroundColor = bgColor;
+                  cell.style.color = color;
+                }, 0.75 * 1000 );   // reset the colors after 0.75 seconds
+            };
+        }
+    </script>
+    
+    <script async="" id="netlify-rum-container" data-netlify-rum-site-id="2dc01b76-a219-41c6-8333-d2a7067c34d9" data-netlify-deploy-branch="" data-netlify-deploy-context="production" data-netlify-cwv-token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzaXRlX2lkIjoiMmRjMDFiNzYtYTIxOS00MWM2LTgzMzMtZDJhNzA2N2MzNGQ5IiwiYWNjb3VudF9pZCI6IjYxYjkzZGNkYWQxYzcxMGRiNzI5ZTNhNyIsImRlcGxveV9pZCI6IjY5NWMwZmEzOTQ4YmY0ODFmZjQ0OWFkMiIsImlzc3VlciI6Im5mc2VydmVyIn0.E3pxxFrxvh7X3piZRXWe05NivH_o5ZfibthR-ZkIsM4"></script> <!--  src="file:///.netlify/scripts/rum" -->
+</html>
