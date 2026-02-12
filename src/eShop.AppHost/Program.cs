@@ -26,6 +26,10 @@ var identityApi = builder.AddProject<Projects.Identity_API>("identity-api", laun
 
 var identityEndpoint = identityApi.GetEndpoint(launchProfileName);
 
+var fmeApi = builder.AddProject<Projects.Fme>("fme-api")
+    .WithReference(rabbitMq).WaitFor(rabbitMq)
+    .WithEnvironment("Identity__Url", identityEndpoint);
+
 var basketApi = builder.AddProject<Projects.Basket_API>("basket-api")
     .WithReference(redis)
     .WithReference(rabbitMq).WaitFor(rabbitMq)
@@ -68,6 +72,7 @@ var webhooksClient = builder.AddProject<Projects.WebhookClient>("webhooksclient"
 var webApp = builder.AddProject<Projects.WebApp>("webapp", launchProfileName)
     .WithExternalHttpEndpoints()
     .WithUrls(c => c.Urls.ForEach(u => u.DisplayText = $"Online Store ({u.Endpoint?.EndpointName})"))
+    .WithReference(fmeApi)
     .WithReference(basketApi)
     .WithReference(catalogApi)
     .WithReference(orderingApi)
@@ -92,7 +97,8 @@ webApp.WithEnvironment("CallBackUrl", webApp.GetEndpoint(launchProfileName));
 webhooksClient.WithEnvironment("CallBackUrl", webhooksClient.GetEndpoint(launchProfileName));
 
 // Identity has a reference to all of the apps for callback urls, this is a cyclic reference
-identityApi.WithEnvironment("BasketApiClient", basketApi.GetEndpoint("http"))
+identityApi.WithEnvironment("FmeClient", basketApi.GetEndpoint("http"))
+           .WithEnvironment("BasketApiClient", basketApi.GetEndpoint("http"))
            .WithEnvironment("OrderingApiClient", orderingApi.GetEndpoint("http"))
            .WithEnvironment("WebhooksApiClient", webHooksApi.GetEndpoint("http"))
            .WithEnvironment("WebhooksWebClient", webhooksClient.GetEndpoint(launchProfileName))

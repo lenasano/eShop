@@ -1,6 +1,7 @@
 ﻿@page "/"
 @inject NavigationManager Nav
 @inject CatalogService CatalogService
+@inject FmeService FmeService
 @attribute [StreamRendering]
 
 <PageTitle>AdventureWorks</PageTitle>
@@ -20,7 +21,7 @@
             <div class="catalog-items">
                 @foreach (var item in catalogResult.Data)
                 {
-                    <CatalogListItem Item="@item" />
+                    <CatalogListItem Item="@item" DisplayRating="@displayRating" />
                 }
             </div>
 
@@ -46,6 +47,7 @@
     [SupplyParameterFromQuery(Name = "type")]
     public int? ItemTypeId { get; set; }
 
+    string? displayRating { get; set; } = null;
     CatalogResult? catalogResult;
 
     static IEnumerable<int> GetVisiblePageIndexes(CatalogResult result)
@@ -58,5 +60,12 @@
             PageSize,
             BrandId,
             ItemTypeId);
+
+        StateHasChanged();  /* An asynchronous handler involves multiple asynchronous phases
+                                Due to the way that tasks are defined in .NET, a receiver of a Task can only observe its final completion, not intermediate asynchronous states. Therefore, ComponentBase can only trigger rerendering when the Task is first returned and when the Task finally completes. The framework can't know to rerender a component at other intermediate points... If you want to rerender at intermediate points, call StateHasChanged at those points.
+
+                                https://learn.microsoft.com/en-us/aspnet/core/blazor/components/rendering?view=aspnetcore-10.0 */
+
+        displayRating = await FmeService.GetFlagTreatmentAsync(FlagNames.DisplayProductRating);
     }
 }

@@ -9,6 +9,10 @@
         <span class='catalog-product-content'>
             <span class='name'>@Item.Name</span>
             <span class='price'>$@Item.Price.ToString("0.00")</span>
+            @if(!string.IsNullOrEmpty(@DisplayRating) && !@DisplayRating.Equals("control") && !@DisplayRating.Equals("off"))
+            {
+                <span class='item-rating' style='color:@DisplayRating'>@Rating</span>
+            }
         </span>
     </a>
 </div>
@@ -16,4 +20,23 @@
 @code {
     [Parameter, EditorRequired]
     public required CatalogItem Item { get; set; }
+
+    [Parameter]
+    public string? DisplayRating { get; set; }
+
+    private string Rating = "☆★★";
+
+    protected override void OnInitialized()
+    {
+        int minRating = 2;
+        int maxRating = 5;
+        int rating = Item.Name.ToCharArray()[1] % maxRating + minRating;
+
+        string result = string.Empty;
+        for(int i = 0; i < maxRating; i++) {
+            result = ( i < rating ? "★" : "☆" ) + result;
+        }
+
+        Rating = result;
+    }
 }

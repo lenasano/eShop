@@ -30,6 +30,7 @@
 
   <ItemGroup>
     <Protobuf Include="..\Basket.API\Proto\basket.proto" GrpcServices="Client" />
+    <Protobuf Include="..\FeatureManagementExperimentation\Protos\fme.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>

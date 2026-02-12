@@ -11,6 +11,7 @@ $gitContext = "https://github.com/$gitUser/$repoName"
 $services = @( 
     @{ Name="eshopbasket"; Image="eshop/basket.api"; File="src/Services/Basket/Basket.API/Dockerfile" },
     @{ Name="eshopcatalog"; Image="eshop/catalog.api"; File="src/Services/Catalog/Catalog.API/Dockerfile" },
+    @{ Name="eshopfme"; Image="eshop/fme"; File="src/Services/FeatureManagementExperimentation/Fme/Dockerfile" },
     @{ Name="eshopidentity"; Image="eshop/identity.api"; File="src/Services/Identity/Identity.API/Dockerfile" },
     @{ Name="eshopordering"; Image="eshop/ordering.api"; File="src/Services/Ordering/Ordering.API/Dockerfile" },
 	@{ Name="eshoporderingbg"; Image="eshop/orderprocessor"; File="src/Services/Ordering/OrderProcessor/Dockerfile" },

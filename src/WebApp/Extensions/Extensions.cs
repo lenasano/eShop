@@ -1,6 +1,7 @@
 ﻿using eShop.Basket.API.Grpc;
 using eShop.WebApp.Services.OrderStatus.IntegrationEvents;
 using eShop.WebAppComponents.Services;
+using FeatureManagementExperimentation.Grpc;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -27,9 +28,16 @@ public static class Extensions
         builder.Services.AddSingleton<OrderStatusNotificationService>();
         builder.Services.AddSingleton<IProductImageUrlProvider, ProductImageUrlProvider>();
         builder.Services.AddScoped<ClientHeaderInterceptor>();  // for anonymous user support
+        builder.Services.AddSingleton<FmeService>();            // for granular feature rollouts
+        
         builder.AddAIServices();
 
         // HTTP and GRPC client registrations
+
+        builder.Services.AddGrpcClient<Fme.FmeClient>(o => o.Address = new("http://fme-api"))
+            .AddAuthToken()
+            .AddInterceptor<ClientHeaderInterceptor>(); // for anonymous user support
+
         builder.Services.AddGrpcClient<Basket.BasketClient>(o => o.Address = new("http://basket-api"))
             .AddAuthToken()
             .AddInterceptor<ClientHeaderInterceptor>(); // for anonymous user support

@@ -6,6 +6,7 @@
       "src\\Catalog.API\\Catalog.API.csproj",
       "src\\EventBusRabbitMQ\\EventBusRabbitMQ.csproj",
       "src\\EventBus\\EventBus.csproj",
+      "src\\FeatureManagementExperimentation\\Fme.csproj",
       "src\\Identity.API\\Identity.API.csproj",
       "src\\IntegrationEventLogEF\\IntegrationEventLogEF.csproj",
       "src\\Ordering.API\\Ordering.API.csproj",

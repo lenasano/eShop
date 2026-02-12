@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option csharp_namespace = "FeatureManagementExperimentation.Grpc";
+
+package FmeApi;
+
+// The FME service definition.
+service Fme {
+  // Evaluates a feature flag
+  rpc GetFlagTreatment (FlagRequest) returns (FlagReply);
+}
+
+// The request message containing the feature flag name.
+message FlagRequest {
+  string flagName = 1;
+}
+
+// The response message containing the feature flag treatment.
+message FlagReply {
+  string treatmentResult = 1;
+}
