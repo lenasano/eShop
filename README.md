@@ -140,3 +140,33 @@ The sample catalog data is defined in [catalog.json](https://github.com/dotnet/e
 ## eShop on Azure
 
 For a version of this app configured for deployment on Azure, please view [the eShop on Azure](https://github.com/Azure-Samples/eShopOnAzure) repo.
+
+# <img width="24" height="24" alt="harness_favicon" src="img/harness_favicon.png" /> Harness Feature Management & Experimentation (FME)
+
+This version of eShop includes a gRPC backend microservice that evaluates Harness FME feature flags.
+
+To evaluate feature flags in code:
+1. [Sign up to Harness for free](https://app.harness.io/auth/#/signup) and choose the Feature Management & Experimentation tile.
+2. Find your [Harness FME server-side SDK API key](https://developer.harness.io/docs/feature-management-experimentation/api-keys?fme-split=fme) value (take note of the associated **Environment**).
+3. On your machine, create a `YOUR_SDK_KEY` environment variable and set the value to be the API key value. The FME microservice will use this value for authentication.
+4. Create two FME feature flags named `display_product_rating` and `display_discount`.
+5. Create definitions for each feature flag in the FME Environment that matches your API key, as follows:
+  - `display_product_rating` 
+    - choose css color keywords as treatment names
+  - `display_discount`
+    - choose the percentage discount amounts (e.g. 30, 50, etc.) as treatment names
+    - set up an attribute-based targeting rule: **`IF`** `city` `is in list` `new_york` (you can type 'city' and 'new_york' directly in the input boxes)
+
+When the site is running, you will see feature flag impressions (evaluations) showing up on the **Live tail** tab of your feature flags or of Data Hub in Harness FME.
+
+For implementation details, look in the repo commit history. If you have questions, reach out to us at support@split.io (the support email continues to be used by the team at Harness FME).
+
+[Harness](https://www.harness.io/) is a modern software delivery platform. 
+
+## Anonymous user login
+
+This version of eShop allows users to add items to the cart before signing in to the eShop site.
+
+### Coming Enhancements
+
+There are some coming enhancements to provide a seamless user experience across user logins, when using FME feature flags. If you are interested in seamless feature flag evaluations and experimentation across user logins, add a watch to this repo. 
