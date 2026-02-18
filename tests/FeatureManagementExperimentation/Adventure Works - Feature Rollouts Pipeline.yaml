@@ -1,0 +1,591 @@
+pipeline:
+  name: Adventure Works - Feature Rollouts
+  identifier: Adventure_Works_Feature_Rollouts
+  projectIdentifier: lena_playground
+  orgIdentifier: default
+  tags: {}
+  variables:
+    - name: fme_feature_flag_name
+      type: String
+      description: ""
+      required: true
+      value: display_product_rating
+    - name: fme_environment
+      type: String
+      description: ""
+      required: true
+      value: Production-Env
+  stages:
+    - stage:
+        name: Rollout Feature
+        identifier: Rollout_Feature
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: Set Individual Targets
+                  identifier: Set_Individual_Targets
+                  steps:
+                    - step:
+                        type: FmeFlagUpdate
+                        name: Set Flag Status to External Beta
+                        identifier: Set_Flag_Status_to_External_Beta
+                        spec:
+                          name: <+pipeline.variables.fme_feature_flag_name>
+                          rolloutStatus: External Beta
+                          addDefaultRolloutPlans: true
+                    - step:
+                        type: FmeFlagSetIndividualTargets
+                        name: Set a0 a1 a2 and a3 targets
+                        identifier: Set_a0_a1_a2_a3_and_a4_targets
+                        spec:
+                          flagName: <+pipeline.variables.fme_feature_flag_name>
+                          environment: <+pipeline.variables.fme_environment>
+                          treatments:
+                            - treatment: black
+                              keys:
+                                - a0
+                              segments: []
+                            - treatment: darkorange
+                              keys:
+                                - a1
+                              segments: []
+                            - treatment: goldenrod
+                              keys:
+                                - a2
+                              segments: []
+                            - treatment: "off"
+                              keys:
+                                - a3
+                              segments: []
+                    - step:
+                        type: Wait
+                        name: pause 30s
+                        identifier: pause_30s
+                        spec:
+                          duration: 30s
+                      contextType: Pipeline
+                    - step:
+                        type: FmeFlagAddRemoveIndividualTargets
+                        name: Remove a0 Target
+                        identifier: Remove_a0_Target
+                        spec:
+                          flagName: <+pipeline.variables.fme_feature_flag_name>
+                          environment: <+pipeline.variables.fme_environment>
+                          treatments:
+                            - treatment: black
+                              removeKeys:
+                                - a0
+                      contextType: Pipeline
+              - step:
+                  type: Wait
+                  name: pause 30s .
+                  identifier: pause_30s_2
+                  spec:
+                    duration: 30s
+              - stepGroup:
+                  name: Set Up Experiment
+                  identifier: Set_Up_Experiment
+                  steps:
+                    - step:
+                        type: FmeFlagUpdate
+                        name: Set Flag Status to Experimenting
+                        identifier: Set_Flag_Status_to_Experimenting
+                        spec:
+                          name: <+pipeline.variables.fme_feature_flag_name>
+                          rolloutStatus: Experimenting
+                          addDefaultRolloutPlans: true
+                    - step:
+                        type: FmeFlagLimitExposure
+                        name: Limit Flag Exposure
+                        identifier: Limit_Flag_Exposure
+                        spec:
+                          flagName: <+pipeline.variables.fme_feature_flag_name>
+                          environment: <+pipeline.variables.fme_environment>
+                          limit: 20
+                    - step:
+                        type: FmeFlagDefaultAllocation
+                        name: Run Experiment
+                        identifier: Run_Experiment
+                        spec:
+                          flagName: <+pipeline.variables.fme_feature_flag_name>
+                          environment: <+pipeline.variables.fme_environment>
+                          allocation:
+                            - treatment: goldenrod
+                              amount: 25
+                            - treatment: darkorange
+                              amount: 25
+                            - treatment: black
+                              amount: 25
+                            - treatment: "off"
+                              amount: 25
+              - step:
+                  type: Wait
+                  name: pause 60s
+                  identifier: pause_60s_3
+                  spec:
+                    duration: 1m
+              - stepGroup:
+                  name: Complete Experiment
+                  identifier: Complete_Experiment
+                  steps:
+                    - step:
+                        type: HarnessApproval
+                        name: Choose Flag Variant Based on Experiment Results
+                        identifier: Choose_Flag_Variant_Based_on_Experiment_Results
+                        spec:
+                          approvalMessage: |-
+                            As manual approver, please take the following steps:
+                            1. Review experiment results.
+                            2. Take special note of key and guardrail metric results.
+                            3. Choose the feature flag variation that should remain in production. (You must choose only one feature flag treatment.)
+                          includePipelineExecutionHistory: true
+                          isAutoRejectEnabled: false
+                          approvers:
+                            userGroups:
+                              - account.FME_Pipeline_Approvers
+                            minimumCount: 1
+                            disallowPipelineExecutor: false
+                          approverInputs:
+                            - name: approved_flag_treatment
+                              defaultValue: ""
+                              required: true
+                              selectOneFrom: black,darkorange,goldenrod
+                        timeout: 4d
+                        failureStrategies:
+                          - onFailure:
+                              errors:
+                                - ApprovalRejection
+                              action:
+                                type: MarkAsFailure
+                    - parallel:
+                        - step:
+                            type: FmeFlagPatchDefinition
+                            name: Set Chosen Flag Variant - black
+                            identifier: Set_Chosen_Flag_Variant_black
+                            spec:
+                              flagName: <+pipeline.variables.fme_feature_flag_name>
+                              environment: <+pipeline.variables.fme_environment>
+                              operations: |-
+                                [
+                                    {
+                                        "op"   : "replace", 
+                                        "path" : "/defaultRule",
+                                        "value": 
+                                        [
+                                            {"treatment": "black"     ,"size": 95},
+                                            {"treatment": "darkorange","size": 0 },
+                                            {"treatment": "goldenrod" ,"size": 0 },
+                                            {"treatment": "off"       ,"size": 5 }
+                                        ]
+                                    },
+                                    {
+                                        "op"  : "remove", 
+                                        "path": "/treatments/1/keys/0"
+                                    },
+                                    {
+                                        "op"  : "remove",
+                                        "path": "/treatments/2/keys/0"
+                                    },
+                                    {
+                                        "op"  : "remove", 
+                                        "path": "/treatments/3/keys/0"
+                                    }
+                                ]
+                              inputVariables:
+                                - name: approved_flag_treatment
+                                  type: String
+                                  value: <+execution.steps.Choose_Flag_Variant_Based_on_Experiment_Results.output.approverInputs.approved_flag_treatment>
+                            when:
+                              stageStatus: Success
+                              condition: <+execution.steps.Complete_Experiment.steps.Choose_Flag_Variant_Based_on_Experiment_Results.output.approverInputs.approved_flag_treatment> == "black"
+                            failureStrategies:
+                              - onFailure:
+                                  errors:
+                                    - AllErrors
+                                  action:
+                                    type: Abort
+                          contextType: Pipeline
+                        - step:
+                            type: FmeFlagPatchDefinition
+                            name: Set Chosen Flag Variant - darkorange
+                            identifier: Set_Chosen_Flag_Variant_darkorange
+                            spec:
+                              flagName: <+pipeline.variables.fme_feature_flag_name>
+                              environment: <+pipeline.variables.fme_environment>
+                              operations: |-
+                                [
+                                    {
+                                        "op"   : "replace", 
+                                        "path" : "/defaultRule",
+                                        "value": 
+                                        [
+                                            {"treatment": "black"     ,"size": 0 },
+                                            {"treatment": "darkorange","size": 95},
+                                            {"treatment": "goldenrod" ,"size": 0 },
+                                            {"treatment": "off"       ,"size": 5 }
+                                        ]
+                                    },
+                                    {
+                                        "op"  : "remove", 
+                                        "path": "/treatments/1/keys/0"
+                                    },
+                                    {
+                                        "op"  : "remove",
+                                        "path": "/treatments/2/keys/0"
+                                    },
+                                    {
+                                        "op"  : "remove", 
+                                        "path": "/treatments/3/keys/0"
+                                    }
+                                ]
+                              inputVariables:
+                                - name: approved_flag_treatment
+                                  type: String
+                                  value: <+execution.steps.Choose_Flag_Variant_Based_on_Experiment_Results.output.approverInputs.approved_flag_treatment>
+                            when:
+                              stageStatus: Success
+                              condition: <+execution.steps.Complete_Experiment.steps.Choose_Flag_Variant_Based_on_Experiment_Results.output.approverInputs.approved_flag_treatment> == "darkorange"
+                            failureStrategies:
+                              - onFailure:
+                                  errors:
+                                    - AllErrors
+                                  action:
+                                    type: Abort
+                          contextType: Pipeline
+                        - step:
+                            type: FmeFlagPatchDefinition
+                            name: Set Chosen Flag Variant - goldenrod
+                            identifier: Set_Chosen_Flag_Variant_goldenrod
+                            spec:
+                              flagName: <+pipeline.variables.fme_feature_flag_name>
+                              environment: <+pipeline.variables.fme_environment>
+                              operations: |-
+                                [
+                                    {
+                                        "op"   : "replace", 
+                                        "path" : "/defaultRule",
+                                        "value": 
+                                        [
+                                            {"treatment": "black"     ,"size": 0 },
+                                            {"treatment": "darkorange","size": 0 },
+                                            {"treatment": "goldenrod" ,"size": 95},
+                                            {"treatment": "off"       ,"size": 5 }
+                                        ]
+                                    },
+                                    {
+                                        "op"  : "remove", 
+                                        "path": "/treatments/1/keys/0"
+                                    },
+                                    {
+                                        "op"  : "remove",
+                                        "path": "/treatments/2/keys/0"
+                                    },
+                                    {
+                                        "op"  : "remove", 
+                                        "path": "/treatments/3/keys/0"
+                                    }
+                                ]
+                              inputVariables:
+                                - name: approved_flag_treatment
+                                  type: String
+                                  value: <+execution.steps.Choose_Flag_Variant_Based_on_Experiment_Results.output.approverInputs.approved_flag_treatment>
+                            when:
+                              stageStatus: Success
+                              condition: <+execution.steps.Complete_Experiment.steps.Choose_Flag_Variant_Based_on_Experiment_Results.output.approverInputs.approved_flag_treatment> == "goldenrod"
+                            failureStrategies:
+                              - onFailure:
+                                  errors:
+                                    - AllErrors
+                                  action:
+                                    type: Abort
+                          contextType: Pipeline
+                        - step:
+                            type: FmeFlagPatchDefinition
+                            name: Set Chosen Flag Variant - off
+                            identifier: Set_Chosen_Flag_Variant_off
+                            spec:
+                              flagName: <+pipeline.variables.fme_feature_flag_name>
+                              environment: <+pipeline.variables.fme_environment>
+                              operations: |-
+                                [
+                                    {
+                                        "op"   : "replace", 
+                                        "path" : "/defaultRule",
+                                        "value": 
+                                        [
+                                            {"treatment": "goldenrod" ,"size": 0  },
+                                            {"treatment": "darkorange","size": 0  },
+                                            {"treatment": "black"     ,"size": 0  },
+                                            {"treatment": "off"       ,"size": 100}
+                                        ]
+                                    },
+                                    {
+                                        "op"  : "remove", 
+                                        "path": "/treatments/1/keys/0"
+                                    },
+                                    {
+                                        "op"  : "remove",
+                                        "path": "/treatments/2/keys/0"
+                                    },
+                                    {
+                                        "op"  : "remove", 
+                                        "path": "/treatments/3/keys/0"
+                                    }
+                                ]
+                              inputVariables:
+                                - name: approved_flag_treatment
+                                  type: String
+                                  value: <+execution.steps.Choose_Flag_Variant_Based_on_Experiment_Results.output.approverInputs.approved_flag_treatment>
+                            when:
+                              stageStatus: Failure
+                            failureStrategies:
+                              - onFailure:
+                                  errors:
+                                    - AllErrors
+                                  action:
+                                    type: Abort
+                          contextType: Pipeline
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - AllErrors
+                        action:
+                          type: Abort
+              - step:
+                  type: Wait
+                  name: pause 10s
+                  identifier: pause_10s_4
+                  spec:
+                    duration: 10s
+                  when:
+                    stageStatus: Success
+                    condition: <+execution.steps.Complete_Experiment.steps.Choose_Flag_Variant_Based_on_Experiment_Results.output.approverInputs.approved_flag_treatment> != "off"
+              - stepGroup:
+                  name: Complete Feature Rollout
+                  identifier: Complete_Feature_Rollout
+                  steps:
+                    - step:
+                        type: FmeFlagUpdate
+                        name: Set Flag Status to Ramping
+                        identifier: Set_Flag_Status_to_Ramping
+                        spec:
+                          name: <+pipeline.variables.fme_feature_flag_name>
+                          rolloutStatus: Ramping
+                          addDefaultRolloutPlans: true
+                    - step:
+                        type: FmeFlagLimitExposure
+                        name: Roll Out to 30 Percent
+                        identifier: Rollout_to_30_Percent
+                        spec:
+                          flagName: <+pipeline.variables.fme_feature_flag_name>
+                          environment: <+pipeline.variables.fme_environment>
+                          limit: 32
+                    - step:
+                        type: Wait
+                        name: pause 10s .
+                        identifier: pause_10s_5
+                        spec:
+                          duration: 10s
+                    - step:
+                        type: FmeFlagLimitExposure
+                        name: Roll Out to 50 Percent
+                        identifier: Rollout_to_50_Percent_ha
+                        spec:
+                          flagName: <+pipeline.variables.fme_feature_flag_name>
+                          environment: <+pipeline.variables.fme_environment>
+                          limit: 53
+                    - step:
+                        type: Wait
+                        name: pause 10s ..
+                        identifier: pause_10s_6
+                        spec:
+                          duration: 10s
+                    - step:
+                        type: FmeFlagLimitExposure
+                        name: Roll Out to 75 Percent
+                        identifier: Roll_Out_to_75_Percent
+                        spec:
+                          flagName: <+pipeline.variables.fme_feature_flag_name>
+                          environment: <+pipeline.variables.fme_environment>
+                          limit: 79
+                    - step:
+                        type: Wait
+                        name: pause 10s ...
+                        identifier: pause_10s_7
+                        spec:
+                          duration: 10s
+                    - step:
+                        type: FmeFlagLimitExposure
+                        name: Roll Out to 95 Percent
+                        identifier: Roll_Out_to_95_Percent
+                        spec:
+                          flagName: <+pipeline.variables.fme_feature_flag_name>
+                          environment: <+pipeline.variables.fme_environment>
+                          limit: 100
+                    - stepGroup:
+                        name: Roll Out to 100 Percent and Remove Baseline Comparison
+                        identifier: Roll_Out_to_100_Percent_sg
+                        steps:
+                          - parallel:
+                              - step:
+                                  type: FmeFlagPatchDefinition
+                                  name: Roll Out to 100 Percent - black
+                                  identifier: Roll_Out_to_100_Percent_black
+                                  spec:
+                                    flagName: <+pipeline.variables.fme_feature_flag_name>
+                                    environment: <+pipeline.variables.fme_environment>
+                                    operations: |-
+                                      [
+                                          {
+                                              "op"   : "replace", 
+                                              "path" : "/defaultRule",
+                                              "value": 
+                                              [
+                                                  {"treatment": "black"     ,"size": 100},
+                                                  {"treatment": "darkorange","size": 0  },
+                                                  {"treatment": "goldenrod" ,"size": 0  },
+                                                  {"treatment": "off"       ,"size": 0  }
+                                              ]
+                                          }
+                                      ]
+                                    inputVariables: []
+                                  when:
+                                    stageStatus: Success
+                                    condition: <+execution.steps.Complete_Experiment.steps.Choose_Flag_Variant_Based_on_Experiment_Results.output.approverInputs.approved_flag_treatment> == "black"
+                              - step:
+                                  type: FmeFlagPatchDefinition
+                                  name: Roll Out to 100 Percent - darkorange
+                                  identifier: Roll_Out_to_100_Percent_darkorange
+                                  spec:
+                                    flagName: <+pipeline.variables.fme_feature_flag_name>
+                                    environment: <+pipeline.variables.fme_environment>
+                                    operations: |-
+                                      [
+                                          {
+                                              "op"   : "replace", 
+                                              "path" : "/defaultRule",
+                                              "value": 
+                                              [
+                                                  {"treatment": "black"     ,"size": 0  },
+                                                  {"treatment": "darkorange","size": 100},
+                                                  {"treatment": "goldenrod" ,"size": 0  },
+                                                  {"treatment": "off"       ,"size": 0  }
+                                              ]
+                                          }
+                                      ]
+                                    inputVariables: []
+                                  when:
+                                    stageStatus: Success
+                                    condition: <+execution.steps.Complete_Experiment.steps.Choose_Flag_Variant_Based_on_Experiment_Results.output.approverInputs.approved_flag_treatment> == "darkorange"
+                              - step:
+                                  type: FmeFlagPatchDefinition
+                                  name: Roll Out to 100 Percent - goldenrod
+                                  identifier: Roll_Out_to_100_Percent_goldenrod
+                                  spec:
+                                    flagName: <+pipeline.variables.fme_feature_flag_name>
+                                    environment: <+pipeline.variables.fme_environment>
+                                    operations: |-
+                                      [
+                                          {
+                                              "op"   : "replace", 
+                                              "path" : "/defaultRule",
+                                              "value": 
+                                              [
+                                                  {"treatment": "black"     ,"size": 0  },
+                                                  {"treatment": "darkorange","size": 0  },
+                                                  {"treatment": "goldenrod" ,"size": 100},
+                                                  {"treatment": "off"       ,"size": 0  }
+                                              ]
+                                          }
+                                      ]
+                                    inputVariables: []
+                                  when:
+                                    stageStatus: Success
+                                    condition: <+execution.steps.Complete_Experiment.steps.Choose_Flag_Variant_Based_on_Experiment_Results.output.approverInputs.approved_flag_treatment> == "goldenrod"
+                    - step:
+                        type: FmeFlagUpdate
+                        name: Set Flag Status to Released
+                        identifier: Set_Flag_Status_to_Released
+                        spec:
+                          name: <+pipeline.variables.fme_feature_flag_name>
+                          rolloutStatus: 100% Released
+                          addDefaultRolloutPlans: true
+                      contextType: Pipeline
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - PolicyEvaluationFailure
+                        action:
+                          type: Abort
+                  when:
+                    stageStatus: Success
+                    condition: <+execution.steps.Complete_Experiment.steps.Choose_Flag_Variant_Based_on_Experiment_Results.output.approverInputs.approved_flag_treatment> != "off"
+              - step:
+                  type: Wait
+                  name: pause 10s ... .
+                  identifier: pause_10s_8
+                  spec:
+                    duration: 10s
+                  when:
+                    stageStatus: Success
+                    condition: <+execution.steps.Complete_Experiment.steps.Choose_Flag_Variant_Based_on_Experiment_Results.output.approverInputs.approved_flag_treatment> != "off"
+              - stepGroup:
+                  name: Tech Debt Clean Up
+                  identifier: Tech_Debt_Clean_Up
+                  steps:
+                    - step:
+                        type: HarnessApproval
+                        name: Transition Feature Flag - Confirm Removed From Code
+                        identifier: Transition_Feature_Flag_Confirm_Removed_From_Code
+                        spec:
+                          approvalMessage: |-
+                            Please confirm that all references to this feature flag have been removed from code, and this flag can be killed in Harness FME.
+
+                            This step is to avoid tech debt.
+                          includePipelineExecutionHistory: true
+                          isAutoRejectEnabled: false
+                          approvers:
+                            userGroups:
+                              - account.FME_Pipeline_Approvers
+                            minimumCount: 1
+                            disallowPipelineExecutor: false
+                          approverInputs: []
+                        timeout: 6w
+                      contextType: Pipeline
+                    - step:
+                        type: FmeFlagUpdate
+                        name: Set Flag Status to Removed From Code
+                        identifier: Set_Flag_Status_to_Removed_From_Code
+                        spec:
+                          name: <+pipeline.variables.fme_feature_flag_name>
+                          rolloutStatus: Removed from Code
+                          addDefaultRolloutPlans: true
+                      contextType: Pipeline
+                    - step:
+                        type: Wait
+                        name: pause 10s ... ..
+                        identifier: pause_10s_9
+                        spec:
+                          duration: 10s
+                      contextType: Pipeline
+                    - step:
+                        type: FmeFlagKill
+                        name: Kill Feature Flag
+                        identifier: Kill_Feature_Flag
+                        spec:
+                          flagName: <+pipeline.variables.fme_feature_flag_name>
+                          environment: <+pipeline.variables.fme_environment>
+                        failureStrategies:
+                          - onFailure:
+                              errors:
+                                - Unknown
+                              action:
+                                type: MarkAsSuccess
+                  when:
+                    stageStatus: Success
+                    condition: <+execution.steps.Complete_Experiment.steps.Choose_Flag_Variant_Based_on_Experiment_Results.output.approverInputs.approved_flag_treatment> != "off"
+        tags: {}
+  allowStageExecutions: true
