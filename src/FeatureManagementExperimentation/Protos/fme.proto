@@ -7,10 +7,10 @@ package FmeApi;
 // The FME service definition.
 service Fme {
   // Evaluates a feature flag
-  rpc GetFlagTreatment (FlagRequest) returns (FlagReply);
+  rpc GetFlagTreatment (FlagRequest) returns (FlagReply );
 }
 
-// The request message containing the feature flag name.
+// The request message containing the feature flag name and attributes.
 message FlagRequest {
   string flagName = 1;
   map<string, string> attributes = 2;
