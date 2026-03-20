@@ -8,6 +8,7 @@ namespace FeatureManagementExperimentation.Grpc;
 
 public class FmeService : Fme.FmeBase
 {
+    private readonly string TRAFFIC_TYPE = "user";
     private readonly ILogger<FmeService> _logger;
     private readonly ISplitClient? _fmeSdkClient;
 
@@ -63,6 +64,30 @@ public class FmeService : Fme.FmeBase
         return new FlagReply{ TreatmentResult = "control" };
     }
 
+    [AllowAnonymous]
+    public override async Task<TrackReply> TrackEvent(EventInfo eventInfo, ServerCallContext context)
+    {
+        _logger.LogDebug($"FME - sending event: {eventInfo.EventType}:{eventInfo.Value}");
+
+        string? userId = context.GetUserIdentity();
+
+        try
+        {
+            if( _fmeSdkClient is not null)
+                return new TrackReply
+                    { 
+                        IsEventTrackedSuccessfully = await _fmeSdkClient.TrackAsync(
+                                                                userId,
+                                                                TRAFFIC_TYPE,
+                                                                eventInfo.EventType,
+                                                                eventInfo.Value
+                                                    )
+                    };
+        }
+        catch (Exception e) { _logger?.LogError(e.Message); }
+
+        return new TrackReply{ IsEventTrackedSuccessfully = false };
+    }
 
 
     private class FmeLogger : ISplitLogger

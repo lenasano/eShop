@@ -8,6 +8,7 @@ package FmeApi;
 service Fme {
   // Evaluates a feature flag
   rpc GetFlagTreatment (FlagRequest) returns (FlagReply );
+  rpc TrackEvent       (EventInfo  ) returns (TrackReply);
 }
 
 // The request message containing the feature flag name and attributes.
@@ -16,7 +17,18 @@ message FlagRequest {
   map<string, string> attributes = 2;
 }
 
+// The request message containing the event info.
+message EventInfo {
+  string eventType = 1;
+  double value = 2;
+}
+
 // The response message containing the feature flag treatment.
 message FlagReply {
   string treatmentResult = 1;
+}
+
+// The response message containing the boolean value returned from the Track function.
+message TrackReply {
+  bool isEventTrackedSuccessfully = 1;
 }

@@ -12,6 +12,7 @@ public class BasketState(
     BasketService basketService,
     CatalogService catalogService,
     OrderingService orderingService,
+    FmeService fme,
     AuthenticationStateProvider authenticationStateProvider) : IBasketState
 {
     private Task<IReadOnlyCollection<BasketItem>>? _cachedBasket;
@@ -118,6 +119,12 @@ public class BasketState(
             Buyer: buyerId,
             Items: [.. orderItems]);
         await orderingService.CreateOrder(request, checkoutInfo.RequestId);
+        await fme.TrackEventAsync(
+            EventTypes.PurchaseAmount,
+            decimal.ToDouble(
+                (await orderingService.GetOrders()).Last().Total
+            )
+        );
         await DeleteBasketAsync();
     }
 
