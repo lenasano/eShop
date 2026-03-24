@@ -7,6 +7,9 @@
     <RootNamespace>eShop.WebAppComponents</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Include="..\Shared\Utils\Fme.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <SupportedPlatform Include="browser" />

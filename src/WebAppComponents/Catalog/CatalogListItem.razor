@@ -1,4 +1,5 @@
 ﻿@using System.ComponentModel
+@using FeatureManagementExperimentation.Shared.Utils
 @using eShop.WebAppComponents.Item
 @inject IProductImageUrlProvider ProductImages
 
@@ -10,12 +11,12 @@
         <span class='catalog-product-content'>
             <span class='name'>@Item.Name</span>
             <span class='price'>$@Item.Price.ToString("0.00")
-                @if( IsFlagOn(@DisplayDiscount) && !string.IsNullOrEmpty(@Discount) )
+                @if( Fme.IsFlagOn(@DisplayDiscount) && !string.IsNullOrEmpty(@Discount) )
                 {
                     <span class='percent-off'> (@Discount% OFF)</span>
                 }
             </span>
-            @if( IsFlagOn(@DisplayRating) )
+            @if( Fme.IsFlagOn(@DisplayRating) )
             {
                 <span class='item-rating' style='color:@DisplayRating'>@Rating</span>
             }
@@ -36,28 +37,17 @@
     private string  Rating = "☆★★";
     private string? Discount;
 
-    protected override void OnInitialized()
+    protected override void OnParametersSet()
     {
         SetRating();
-    }
-
-    protected override void OnParametersSet(){
         SetDiscount();
     }
 
     private void SetRating()
     {
-        int minRating = 2;
-        int maxRating = 5;
-        int rating = Item.Name.ToCharArray()[1] % maxRating + minRating;
-
-        string result = string.Empty;
-        for(int i = 0; i < maxRating; i++) {
-            result = ( i < rating ? "★" : "☆" ) + result;
-        }
-
-        Rating = result;
+        Rating = new string('☆', 5 - Item.Rating) + new string ('★', Item.Rating);
     }
+
     private void SetDiscount()
     {
         if( Item.Name.Substring(1, 3).Contains('e'))    // Set some (not all) items on sale
@@ -65,9 +55,4 @@
             Discount = DisplayDiscount;
         }
     }
-
-    private bool IsFlagOn(string? flagResult) => 
-        ! string.IsNullOrEmpty(flagResult) && 
-        ! flagResult.Equals("control") && 
-        ! flagResult.Equals("off");
 }

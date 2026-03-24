@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using FeatureManagementExperimentation.Shared.Utils
 @inject NavigationManager Nav
 @inject CatalogService CatalogService
 @inject FmeService FmeService
@@ -47,8 +48,8 @@
     [SupplyParameterFromQuery(Name = "type")]
     public int? ItemTypeId { get; set; }
 
-    string? displayRating   { get; set; } = null;
-    string? displayDiscount { get; set; } = null;
+    private string? displayRating   { get; set; } = null;
+    private string? displayDiscount { get; set; } = null;
     CatalogResult? catalogResult;
 
     static IEnumerable<int> GetVisiblePageIndexes(CatalogResult result)
@@ -67,9 +68,9 @@
 
                                 https://learn.microsoft.com/en-us/aspnet/core/blazor/components/rendering?view=aspnetcore-10.0 */
 
-        displayRating   = await FmeService.GetFlagTreatmentAsync(FlagNames.DisplayProductRating);
+        displayRating   = await FmeService.GetFlagTreatmentAsync(Fme.FlagNames.DisplayProductRating);
         displayDiscount = await FmeService.GetFlagTreatmentAsync(
-                                                FlagNames.DisplayDiscount, 
+                                                Fme.FlagNames.DisplayDiscount, 
                                                 new Dictionary<string, object>{{"city", "new_york"}} );
     }
 }

@@ -5,6 +5,7 @@ using eShop.WebAppComponents.Catalog;
 using eShop.WebAppComponents.Services;
 using eShop.Basket.API.Grpc;
 using System.Runtime.CompilerServices;
+using FeatureManagementExperimentation.Shared.Utils;
 
 namespace eShop.WebApp.Services;
 
@@ -120,7 +121,7 @@ public class BasketState(
             Items: [.. orderItems]);
         await orderingService.CreateOrder(request, checkoutInfo.RequestId);
         await fme.TrackEventAsync(
-            EventTypes.PurchaseAmount,
+            Fme.EventTypes.PurchaseAmount,
             decimal.ToDouble(
                 (await orderingService.GetOrders()).Last().Total
             )
