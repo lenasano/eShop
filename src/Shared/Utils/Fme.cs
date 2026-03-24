@@ -25,5 +25,7 @@ public static class Fme
     /// </remarks>
     public readonly struct EventTypes {
         public const string PurchaseAmount = "purchase";
+        public const string AddToCart = "addtocart";
+        public const string AddToCartFiveStar = "addtocart.5star";
     };
 }
