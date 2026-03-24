@@ -2,6 +2,7 @@
 @using System.Net
 @inject CatalogService CatalogService
 @inject BasketState BasketState
+@inject FmeService FmeService
 @inject NavigationManager Nav
 @inject IProductImageUrlProvider ProductImages
 @inject ILoggerFactory LoggerFactory
@@ -9,6 +10,7 @@
 @using System.ComponentModel
 @using Microsoft.AspNetCore.Authentication.Cookies
 @using Microsoft.AspNetCore.Authentication
+@using FeatureManagementExperimentation.Shared.Utils
 
 @if (item is not null)
 {
@@ -20,6 +22,10 @@
         <img alt="@item.Name" src="@ProductImages.GetProductImageUrl(item)" />
         <div class="description">
             <p>@item.Description</p>
+            @if( Fme.IsFlagOn(displayRating) )
+            {
+                <span style='color:@displayRating'>@Rating</span>
+            }
             <p>
                 Brand: <strong>@item.CatalogBrand?.Brand</strong>
             </p>
@@ -70,6 +76,8 @@ else if (notFound)
     private int numInCart;
     private bool isLoggedIn;
     private bool notFound;
+    private string? displayRating   { get; set; } = null;
+    private string  Rating = "☆★★";
 
     [Parameter]
     public int ItemId { get; set; }
@@ -84,12 +92,26 @@ else if (notFound)
             isLoggedIn = HttpContext?.User.Identity?.IsAuthenticated == true;
             item = await CatalogService.GetCatalogItem(ItemId);
             await UpdateNumInCartAsync();
+
+            displayRating   = await FmeService.GetFlagTreatmentAsync(Fme.FlagNames.DisplayProductRating);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
             HttpContext!.Response.StatusCode = 404;
             notFound = true;
         }
+    }
+
+    protected override void OnParametersSet()
+    {
+        SetRating();
+    }
+
+    private void SetRating()
+    {
+        if( item is null ) return;
+
+        Rating = new string('☆', 5 - item.Rating) + new string ('★', item.Rating);
     }
 
     private async Task AddToCartAsync()
