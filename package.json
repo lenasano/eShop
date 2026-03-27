@@ -5,13 +5,19 @@
   "directories": {
     "test": "tests"
   },
-  "scripts": {},
+  "scripts": {
+    "build": "esbuild node_modules/@splitsoftware/browser-rum-agent/esm/index.js --bundle --minify --outfile=src/WebApp/wwwroot/web_modules/@splitsoftware/browser-rum-agent.js --platform=node --format=esm"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@playwright/test": "^1.42.1",
     "@types/node": "^20.11.25",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "esbuild": "^0.27.4"
+  },
+  "dependencies": {
+    "@splitsoftware/browser-rum-agent": "^1.0.0"
   }
 }

@@ -33,4 +33,9 @@
     <Protobuf Include="..\FeatureManagementExperimentation\Protos\fme.proto" GrpcServices="Client" />
   </ItemGroup>
 
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="npm install" WorkingDirectory="$(ProjectDir)" />
+    <Exec Command="npm run build" WorkingDirectory="$(ProjectDir)" />
+  </Target>
+
 </Project>

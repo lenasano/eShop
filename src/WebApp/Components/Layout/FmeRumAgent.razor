@@ -1,0 +1,29 @@
+﻿@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization;
+@using eShop.AnonymousUserSupport.Extensions;
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+
+
+@code {
+    private static readonly string FME_CLIENTSIDE_SDK_KEY = "FME_CLIENTSIDE_SDK_KEY";
+
+    private IJSObjectReference? jsModule;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            jsModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Layout/FmeRumAgent.razor.js");
+
+            await jsModule.InvokeVoidAsync(
+                        "registerFmeRumAgent", 
+                        Environment.GetEnvironmentVariable(FME_CLIENTSIDE_SDK_KEY), 
+                        await AuthenticationStateProvider.GetBuyerIdAsync(),
+                        HttpContextAnonymousUserExtensions.ANONYMOUS_USER_ID_KEY
+            );
+        }
+    }
+}
