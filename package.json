@@ -6,7 +6,7 @@
     "test": "tests"
   },
   "scripts": {
-    "build": "esbuild node_modules/@splitsoftware/browser-rum-agent/esm/index.js --bundle --minify --outfile=src/WebApp/wwwroot/web_modules/@splitsoftware/browser-rum-agent.js --platform=node --format=esm"
+    "build": "esbuild node_modules/@splitsoftware/browser-rum-agent/esm/index.js --bundle --outfile=src/WebApp/wwwroot/web_modules/@splitsoftware/browser-rum-agent.js --platform=node --format=esm"
   },
   "keywords": [],
   "author": "",
