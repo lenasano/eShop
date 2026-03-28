@@ -26,8 +26,11 @@ public class FmeService : Fme.FmeBase
             _fmeSdkClient = 
                 new SplitFactory( 
                     Environment.GetEnvironmentVariable(FME_SERVERSIDE_SDK_KEY),
-                    new ConfigurationOptions{ Logger = new FmeLogger(logger) } )
-                .Client();
+                    new ConfigurationOptions {
+                        Logger = new FmeLogger(logger),
+                        ImpressionsRefreshRate = 2,     // send impressions every 2 seconds, instead of 30
+                    }
+                ).Client();
             _fmeSdkClient?.BlockUntilReady(10 * 1000);  // wait 10 seconds for FME feature flag targeting rules and segments to be fetched
         }
         catch (Exception e)
@@ -45,7 +48,7 @@ public class FmeService : Fme.FmeBase
 
         try
         {
-            if( _fmeSdkClient is not null)
+            if( _fmeSdkClient is not null )
             {
                 Dictionary<string,object>? attributes = 
                     ( request.Attributes != null && request.Attributes.Count > 0 )
@@ -76,7 +79,7 @@ public class FmeService : Fme.FmeBase
 
         try
         {
-            if( _fmeSdkClient is not null)
+            if( _fmeSdkClient is not null )
                 return new TrackReply
                     { 
                         IsEventTrackedSuccessfully = await _fmeSdkClient.TrackAsync(
