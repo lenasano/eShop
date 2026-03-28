@@ -18,7 +18,7 @@ public static class HttpContextAnonymousUserExtensions
     /// Server-side anonymous ID accessor
     /// </summary>
     public static string? GetAnonymousUserIdFromHeader(this HttpContext context) => context.Request.Headers[ANONYMOUS_USER_ID_KEY        ] .ToString();
-    private static string? GetAnonymousUserIdFromStash(this HttpContext context) => context.Request.Cookies[STASHED_ANONYMOUS_USER_ID_KEY]?.ToString();
+    public static string? GetAnonymousUserIdFromStash(this HttpContext context) => context.Request.Cookies[STASHED_ANONYMOUS_USER_ID_KEY]?.ToString();
 
     /// <summary>
     /// Returns the anonymous ID value from the <b>Response</b> "Set-Cookie" header. This allows you to detect 

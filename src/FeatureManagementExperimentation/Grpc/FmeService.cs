@@ -1,5 +1,6 @@
 using FeatureManagementExperimentation.Extensions;
 using Microsoft.AspNetCore.Authorization;
+using Splitio.Domain;
 using Splitio.Services.Client.Classes;
 using Splitio.Services.Client.Interfaces;
 using Splitio.Services.Logger;
@@ -40,7 +41,7 @@ public class FmeService : Fme.FmeBase
     {
         _logger.LogDebug($"FME - getting treatment for flag \"{request.FlagName}\"");
 
-        string? userId = context.GetUserIdentity();
+        Key matchingKeys = context.GetUserIdentityAndBucketingKey();
 
         try
         {
@@ -54,7 +55,7 @@ public class FmeService : Fme.FmeBase
                 return new FlagReply
                     { 
                         TreatmentResult = await _fmeSdkClient.GetTreatmentAsync(
-                                                    userId, 
+                                                    matchingKeys,
                                                     request.FlagName,
                                                     attributes
                                           )
