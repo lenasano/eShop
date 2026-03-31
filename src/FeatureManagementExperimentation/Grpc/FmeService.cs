@@ -42,9 +42,9 @@ public class FmeService : Fme.FmeBase
     [AllowAnonymous]
     public override async Task<FlagReply> GetFlagTreatment(FlagRequest request, ServerCallContext context)
     {
-        _logger.LogDebug($"FME - getting treatment for flag \"{request.FlagName}\"");
-
         Key matchingKeys = context.GetUserIdentityAndBucketingKey();
+
+        _logger.LogDebug($"FME - user {matchingKeys.matchingKey}, bucket {matchingKeys.bucketingKey}: getting treatment for flag \"{request.FlagName}\"");
 
         try
         {
