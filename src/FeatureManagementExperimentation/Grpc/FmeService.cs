@@ -7,23 +7,25 @@ using Splitio.Services.Logger;
 
 namespace FeatureManagementExperimentation.Grpc;
 
-public class FmeService : Fme.FmeBase
+public sealed class FmeService : Fme.FmeBase
 {
     private static readonly string FME_SERVERSIDE_SDK_KEY = "FME_SERVERSIDE_SDK_KEY";
     private static readonly string TRAFFIC_TYPE = "user";
 
     private readonly ILogger<FmeService> _logger;
-    private readonly ISplitClient? _fmeSdkClient;
+    private static ISplitClient? _fmeSdkClient;
 
     public FmeService(ILogger<FmeService> logger)
     {
         _logger = logger;
-        _logger.LogDebug($"Initializing FmeService. This service should be added as a singleton, so this message should be logged just once (each time the application starts).");
+        _logger.LogDebug("Creating a new instance of FmeService.");
 
         try
         {
+            _logger.LogDebug($"Initializing FME SDK client: {_fmeSdkClient is null}");
+
             // set up FME API connection
-            _fmeSdkClient = 
+            _fmeSdkClient ??= 
                 new SplitFactory( 
                     Environment.GetEnvironmentVariable(FME_SERVERSIDE_SDK_KEY),
                     new ConfigurationOptions {
